@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Split-Flap Clock</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="board">
+        <div class="board-top">
+            <div class="board-device-name" id="board-device-name"></div>
+        </div>
+        <div class="board-display">
+            <div class="flap-row" id="accent-row-top"></div>
+            <div class="flap-row" id="date-row"></div>
+            <div class="flap-row" id="time-row"></div>
+            <div class="flap-row" id="day-row"></div>
+            <div class="flap-row" id="accent-row-bottom"></div>
+        </div>
+        <div class="board-bottom">
+            <div class="board-branding">Press "S" to customize</div>
+        </div>
+    </div>
+    <div class="settings-panel" id="settings-panel">
+        <div class="settings-title">Customize</div>
+        <div class="settings-row">
+            <span class="settings-label">Accent</span>
+            <div class="color-swatches" id="color-swatches"></div>
+        </div>
+        <div class="settings-row">
+            <label class="settings-label">Time
+                <select id="time-format-picker">
+                    <option value="12">12-hour</option>
+                    <option value="24">24-hour</option>
+                </select>
+            </label>
+        </div>
+        <div class="settings-row">
+            <label class="settings-label">Theme
+                <select id="theme-picker">
+                    <option value="charcoal">Charcoal</option>
+                    <option value="graphite">Graphite</option>
+                    <option value="light">Light</option>
+                </select>
+            </label>
+        </div>
+        <div class="settings-hint">Press S to close</div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,415 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --bg-outer: #1a1a1a;
+    --bg-board: #1a1a1a;
+    --bg-display: #1a1a1a;
+    --bg-well: #111111;
+    --flap-surface: #161616;
+    --text-color: rgba(235, 235, 235, 0.95);
+    --label-color: rgba(255, 255, 255, 0.05);
+    --tile-inset: 1.5px;
+    --tile-radius: 3px;
+
+    /* Board layout helpers — used in tile-size computation below */
+    --board-w:   min(94vw, 1560px);
+    --board-h:   min(88vh, 900px);
+    --pad-h:     clamp(28px, 3.5vmin, 52px);
+    --pad-v:     clamp(20px, 2.5vmin, 36px);
+    --bar-h:     clamp(44px, 7vh, 90px);
+    --tile-gap:  clamp(3px, 0.35vw, 6px);
+
+    /* Tile height constrained by whichever axis runs out of space first:
+       - by-height: fit 5 rows in the display area
+       - by-width:  keep aspect-ratio 0.78 when 12 cols fill the display width */
+    --tile-h-by-height: calc(
+        (var(--board-h) - 2 * var(--bar-h) - 2 * var(--pad-v) - 4 * var(--tile-gap)) / 5
+    );
+    --tile-h-by-width: calc(
+        (var(--board-w) - 2 * var(--pad-h) - 11 * var(--tile-gap)) / 12 / 0.78
+    );
+    --tile-h: min(var(--tile-h-by-height), var(--tile-h-by-width));
+    --tile-w: calc(var(--tile-h) * 0.78);
+}
+
+body[data-theme="graphite"] {
+    --bg-outer: #242424;
+    --bg-board: #222222;
+    --bg-display: #222222;
+    --bg-well: #161616;
+    --flap-surface: #1c1c1c;
+}
+
+body[data-theme="charcoal"] {
+    --bg-outer: #141414;
+    --bg-board: #141414;
+    --bg-display: #141414;
+    --bg-well: #0d0d0d;
+    --flap-surface: #111111;
+}
+
+body[data-theme="light"] {
+    --bg-outer: #e0ddd8;
+    --bg-board: #d0cdc8;
+    --bg-display: #d0cdc8;
+    --bg-well: #b8b5b0;
+    --flap-surface: #dedad6;
+    --text-color: rgba(24, 22, 20, 0.9);
+    --label-color: rgba(0, 0, 0, 0.12);
+}
+
+/* Light mode: reverse highlight/shadow directions to match physics on pale surface */
+body[data-theme="light"] .flap-unit {
+    box-shadow: inset -1px -1px 3px rgba(0, 0, 0, 0.18),
+                inset 1px 1px 2px rgba(255, 255, 255, 0.55);
+}
+body[data-theme="light"] .flap-upper,
+body[data-theme="light"] .flip-top {
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.6),
+                inset -1px -1px 1px rgba(0, 0, 0, 0.1);
+}
+body[data-theme="light"] .flap-lower,
+body[data-theme="light"] .flip-bottom {
+    box-shadow: inset 1px 2px 4px rgba(0, 0, 0, 0.14),
+                inset -1px -1px 0 rgba(255, 255, 255, 0.4);
+}
+body[data-theme="light"] .hinge {
+    background: rgba(0, 0, 0, 0.15);
+}
+
+body[data-text-color="white"] { --text-color: rgba(235, 235, 235, 0.95); }
+body[data-text-color="yellow"] { --text-color: rgba(255, 220, 95, 0.96); }
+body[data-text-color="blue"] { --text-color: rgba(126, 190, 255, 0.96); }
+body[data-text-color="red"] { --text-color: rgba(255, 120, 120, 0.96); }
+
+/* Light theme always uses dark text regardless of text-color setting.
+   Two-attribute specificity (0,2,0) beats the single-attribute rules above. */
+body[data-theme="light"][data-text-color] { --text-color: rgba(36, 33, 30, 0.82); }
+
+body {
+    font-family: -apple-system, 'SF Pro Display', sans-serif;
+    overflow: hidden;
+    cursor: none;
+    height: 100vh;
+    width: 100vw;
+    background: var(--bg-outer);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.grain-overlay {
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.015;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 250 250' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+}
+
+/* ===== THE BOARD ===== */
+.board {
+    height: var(--board-h);
+    width: var(--board-w);
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    position: relative;
+    background: var(--bg-board);
+    border-radius: 12px;
+    padding: var(--pad-v) var(--pad-h);
+    box-shadow:
+        2px 4px 8px rgba(0, 0, 0, 0.35),
+        6px 16px 40px rgba(0, 0, 0, 0.5);
+}
+
+.board-top,
+.board-bottom {
+    position: relative;
+    background: var(--bg-board);
+}
+
+.board-top,
+.board-bottom {
+    height: var(--bar-h);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.board-device-name,
+.board-branding {
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--label-color);
+    user-select: none;
+    pointer-events: none;
+}
+
+.board-device-name { font-size: clamp(9px, 1.05vh, 12px); }
+.board-branding    { font-size: clamp(9px, 1.15vh, 13px); }
+
+/* Display area — same color as board, just holds the grid */
+.board-display {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: var(--tile-gap);
+    background: var(--bg-display);
+}
+
+/* ===== ACCENT CELLS — colored flap cells in corners ===== */
+.flap-unit.accent {
+    background: var(--accent-well, #6c3483);
+    box-shadow: inset -1px -1px 3px rgba(0, 0, 0, 0.5),
+                inset 1px 1px 1px rgba(255, 255, 255, 0.04);
+}
+
+.flap-unit.accent .flap-upper {
+    background: var(--accent-upper, #9b59b6);
+    background-image: none;
+    box-shadow:
+        inset 1px 1px 0 rgba(255, 255, 255, 0.06),
+        inset -1px -1px 1px rgba(0, 0, 0, 0.3);
+}
+
+.flap-unit.accent .flap-lower {
+    background: var(--accent-lower, #8e44ad);
+    background-image: none;
+    box-shadow:
+        inset 1px 2px 4px rgba(0, 0, 0, 0.45),
+        inset -1px -1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.flap-unit.accent .hinge {
+    background: rgba(0, 0, 0, 0.45);
+}
+
+/* ===== SETTINGS PANEL ===== */
+.settings-panel {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    z-index: 2000;
+    background: rgba(20, 20, 20, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    /* backdrop-filter removed — triggers GPU compositor in screensaver sandbox */
+    cursor: default;
+}
+
+.settings-panel.visible {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.settings-title {
+    font-family: -apple-system, 'SF Pro Display', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.3);
+    margin-bottom: 4px;
+}
+
+.settings-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.settings-label {
+    font-family: -apple-system, 'SF Pro Display', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: rgba(255, 255, 255, 0.55);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+}
+
+.color-swatches {
+    display: flex;
+    gap: 7px;
+    align-items: center;
+}
+
+.swatch {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    padding: 0;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s, transform 0.1s;
+}
+
+.swatch:hover,
+.swatch.active {
+    border-color: rgba(255, 255, 255, 0.75);
+}
+
+.settings-panel select {
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.7);
+    font-family: -apple-system, 'SF Pro Display', sans-serif;
+    font-size: 11px;
+    padding: 3px 8px;
+    cursor: pointer;
+    outline: none;
+}
+
+.settings-hint {
+    font-family: -apple-system, 'SF Pro Display', sans-serif;
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.18);
+    text-transform: uppercase;
+    margin-top: 4px;
+}
+
+/* ===== FLAP ROW ===== */
+.flap-row {
+    display: grid;
+    grid-template-columns: repeat(12, var(--tile-w));
+    gap: var(--tile-gap);
+    background: transparent;
+}
+
+/* ===== THE WELL — recessed pocket each flap sits in ===== */
+.flap-unit {
+    position: relative;
+    border-radius: var(--tile-radius);
+    width: var(--tile-w);
+    height: var(--tile-h);
+    background: var(--bg-well);
+    box-shadow: inset -1px -1px 3px rgba(0, 0, 0, 0.6),
+                inset 1px 1px 1px rgba(255, 255, 255, 0.015);
+}
+
+/* ===== FLAP HALVES — static display panels and animation panels ===== */
+.flap-upper, .flap-lower, .flip-top, .flip-bottom {
+    position: absolute;
+    left: var(--tile-inset);
+    right: var(--tile-inset);
+    height: calc(50% - 1px);
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+}
+
+/* No GPU-compositing hints — keep animation on CPU path in sandbox */
+
+/* Top-half panels */
+.flap-upper, .flip-top {
+    top: var(--tile-inset);
+    background: var(--flap-surface);
+    border-radius: var(--tile-radius) var(--tile-radius) 0 0;
+    align-items: flex-end;
+    box-shadow:
+        inset 1px 1px 0 rgba(255, 255, 255, 0.025),
+        inset -1px -1px 1px rgba(0, 0, 0, 0.25);
+}
+
+.flip-top {
+    transform-origin: bottom center;
+    z-index: 20;
+}
+
+/* Bottom-half panels */
+.flap-lower, .flip-bottom {
+    bottom: var(--tile-inset);
+    background: var(--flap-surface);
+    border-radius: 0 0 var(--tile-radius) var(--tile-radius);
+    align-items: flex-start;
+    box-shadow:
+        inset 1px 2px 4px rgba(0, 0, 0, 0.55),
+        inset -1px -1px 0 rgba(255, 255, 255, 0.01);
+}
+
+.flip-bottom {
+    transform: scaleY(0);
+    transform-origin: top center;
+    z-index: 15;
+}
+
+/* ===== TEXT ON FLAPS ===== */
+/* Shift text so its vertical centre sits at the container edge (= the hinge).
+   translateY % is relative to the element's OWN height, not the parent's.
+   Upper: text is flex-end (bottom), shift down 50% → centre at bottom edge.
+   Lower: text is flex-start (top), shift up 50% → centre at top edge.
+   overflow:hidden on the container clips the half that sticks out. */
+.flap-upper .flap-text,
+.flip-top .flap-text {
+    transform: translateY(50%);
+}
+
+.flap-lower .flap-text,
+.flip-bottom .flap-text {
+    transform: translateY(-50%);
+}
+
+.flap-text {
+    font-weight: 500;
+    color: var(--text-color);
+    letter-spacing: 0.01em;
+    user-select: none;
+    font-size: calc(var(--tile-h) * 0.44);
+    line-height: 1;
+    text-shadow: none;
+}
+
+/* ===== THE HINGE — gap between flap halves ===== */
+.hinge {
+    position: absolute;
+    left: var(--tile-inset);
+    right: var(--tile-inset);
+    top: calc(50% - 1px);
+    height: 2px;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.35);
+    box-shadow: none;
+}
+
+/* ===== FLIP ANIMATIONS ===== */
+.flip-top.flipping {
+    animation: flipDown 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.flip-bottom.flipping {
+    animation: flipUp 0.25s 0.2s cubic-bezier(0.22, 0.68, 0.31, 1.12) forwards;
+}
+
+@keyframes flipDown {
+    0%   { transform: scaleY(1); }
+    100% { transform: scaleY(0); }
+}
+
+@keyframes flipUp {
+    0%   { transform: scaleY(0); }
+    100% { transform: scaleY(1); }
+}

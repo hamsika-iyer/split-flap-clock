@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Split-Flap Clock</title>
-    <link rel="icon" type="image/svg+xml" href="favicon.svg?v=2">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,39 +14,238 @@
         </div>
         <div class="board-display">
             <div class="flap-row" id="accent-row-top"></div>
-            <div class="flap-row" id="date-row"></div>
-            <div class="flap-row" id="time-row"></div>
-            <div class="flap-row" id="day-row"></div>
+            <div class="flap-row" id="row-1"></div>
+            <div class="flap-row" id="row-2"></div>
+            <div class="flap-row" id="row-3"></div>
+            <div class="flap-row" id="row-4"></div>
+            <div class="flap-row" id="row-5"></div>
             <div class="flap-row" id="accent-row-bottom"></div>
         </div>
         <div class="board-bottom">
-            <div class="board-branding">Press "S" to customize</div>
+            <div class="board-buttons">
+                <div class="mode-tabs" id="mode-tabs">
+                    <div class="mode-tab-indicator" id="mode-tab-indicator"></div>
+                    <button class="mode-tab active" id="btn-clock" data-mode="clock">
+                        <svg class="btn-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M8 4.5V8.5L10.5 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Clock &amp; Weather
+                    </button>
+                    <button class="mode-tab" id="btn-message" data-mode="message">
+                        <svg class="btn-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="1.5" y="2.5" width="13" height="9" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M4 6h8M4 9h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                        Message
+                    </button>
+                </div>
+                <div class="board-right">
+                <div class="quote-nav" id="quote-nav">
+                    <button class="quote-nav-btn" id="btn-prev-quote">
+                        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" width="14" height="14">
+                            <path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <span class="quote-nav-label">Quote</span>
+                    <button class="quote-nav-btn" id="btn-next-quote">
+                        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" width="14" height="14">
+                            <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="customize-well">
+                    <button class="board-btn" id="btn-customize">
+                        <svg class="btn-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M8 1.5v1.8M8 12.7v1.8M1.5 8h1.8M12.7 8h1.8M3.4 3.4l1.27 1.27M11.33 11.33l1.27 1.27M3.4 12.6l1.27-1.27M11.33 4.67l1.27-1.27" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                        Customize
+                    </button>
+                </div>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="settings-panel" id="settings-panel">
-        <div class="settings-title">Customize</div>
-        <div class="settings-row">
-            <span class="settings-label">Accent</span>
-            <div class="color-swatches" id="color-swatches"></div>
+
+    <!-- Modal overlay -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal" id="settings-modal">
+            <div class="modal-header">
+                <span class="modal-title">Customize</span>
+                <button class="modal-close" id="modal-close" aria-label="Close">&#x2715;</button>
+            </div>
+
+            <!-- Tab bar -->
+            <div class="modal-tabs">
+                <button class="modal-tab active" data-tab="display">Display</button>
+                <button class="modal-tab" data-tab="clock">Clock</button>
+                <button class="modal-tab" data-tab="message">Message</button>
+            </div>
+
+            <!-- Tab: Display -->
+            <div class="modal-tab-panel active" id="tab-display">
+                <div class="modal-row">
+                    <span class="modal-label">Accent</span>
+                    <div class="color-swatches" id="color-swatches"></div>
+                </div>
+                <div class="modal-row">
+                    <span class="modal-label-text">Theme</span>
+                    <div class="theme-swatches" id="theme-swatches">
+                        <button class="theme-swatch" data-theme="charcoal" aria-label="Charcoal">
+                            <svg width="48" height="34" viewBox="0 0 48 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect width="48" height="34" rx="5" fill="#141414"/>
+                                <rect x="4" y="4" width="12" height="12" rx="1.5" fill="#111111"/>
+                                <rect x="18" y="4" width="12" height="12" rx="1.5" fill="#111111"/>
+                                <rect x="32" y="4" width="12" height="12" rx="1.5" fill="#111111"/>
+                                <line x1="4" y1="10" x2="16" y2="10" stroke="#0a0a0a" stroke-width="1.5"/>
+                                <line x1="18" y1="10" x2="30" y2="10" stroke="#0a0a0a" stroke-width="1.5"/>
+                                <line x1="32" y1="10" x2="44" y2="10" stroke="#0a0a0a" stroke-width="1.5"/>
+                                <rect x="4" y="18" width="12" height="12" rx="1.5" fill="#111111"/>
+                                <rect x="18" y="18" width="12" height="12" rx="1.5" fill="#111111"/>
+                                <rect x="32" y="18" width="12" height="12" rx="1.5" fill="#111111"/>
+                                <line x1="4" y1="24" x2="16" y2="24" stroke="#0a0a0a" stroke-width="1.5"/>
+                                <line x1="18" y1="24" x2="30" y2="24" stroke="#0a0a0a" stroke-width="1.5"/>
+                                <line x1="32" y1="24" x2="44" y2="24" stroke="#0a0a0a" stroke-width="1.5"/>
+                                <rect x="7" y="6" width="6" height="2" rx="0.5" fill="rgba(255,255,255,0.18)"/>
+                                <rect x="21" y="6" width="6" height="2" rx="0.5" fill="rgba(255,255,255,0.18)"/>
+                                <rect x="35" y="6" width="6" height="2" rx="0.5" fill="rgba(255,255,255,0.18)"/>
+                            </svg>
+                            <span>Charcoal</span>
+                        </button>
+                        <button class="theme-swatch" data-theme="graphite" aria-label="Graphite">
+                            <svg width="48" height="34" viewBox="0 0 48 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect width="48" height="34" rx="5" fill="#222222"/>
+                                <rect x="4" y="4" width="12" height="12" rx="1.5" fill="#1c1c1c"/>
+                                <rect x="18" y="4" width="12" height="12" rx="1.5" fill="#1c1c1c"/>
+                                <rect x="32" y="4" width="12" height="12" rx="1.5" fill="#1c1c1c"/>
+                                <line x1="4" y1="10" x2="16" y2="10" stroke="#161616" stroke-width="1.5"/>
+                                <line x1="18" y1="10" x2="30" y2="10" stroke="#161616" stroke-width="1.5"/>
+                                <line x1="32" y1="10" x2="44" y2="10" stroke="#161616" stroke-width="1.5"/>
+                                <rect x="4" y="18" width="12" height="12" rx="1.5" fill="#1c1c1c"/>
+                                <rect x="18" y="18" width="12" height="12" rx="1.5" fill="#1c1c1c"/>
+                                <rect x="32" y="18" width="12" height="12" rx="1.5" fill="#1c1c1c"/>
+                                <line x1="4" y1="24" x2="16" y2="24" stroke="#161616" stroke-width="1.5"/>
+                                <line x1="18" y1="24" x2="30" y2="24" stroke="#161616" stroke-width="1.5"/>
+                                <line x1="32" y1="24" x2="44" y2="24" stroke="#161616" stroke-width="1.5"/>
+                                <rect x="7" y="6" width="6" height="2" rx="0.5" fill="rgba(255,255,255,0.18)"/>
+                                <rect x="21" y="6" width="6" height="2" rx="0.5" fill="rgba(255,255,255,0.18)"/>
+                                <rect x="35" y="6" width="6" height="2" rx="0.5" fill="rgba(255,255,255,0.18)"/>
+                            </svg>
+                            <span>Graphite</span>
+                        </button>
+                        <button class="theme-swatch" data-theme="light" aria-label="Light">
+                            <svg width="48" height="34" viewBox="0 0 48 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect width="48" height="34" rx="5" fill="#d0cdc8"/>
+                                <rect x="4" y="4" width="12" height="12" rx="1.5" fill="#dedad6"/>
+                                <rect x="18" y="4" width="12" height="12" rx="1.5" fill="#dedad6"/>
+                                <rect x="32" y="4" width="12" height="12" rx="1.5" fill="#dedad6"/>
+                                <line x1="4" y1="10" x2="16" y2="10" stroke="#b8b5b0" stroke-width="1.5"/>
+                                <line x1="18" y1="10" x2="30" y2="10" stroke="#b8b5b0" stroke-width="1.5"/>
+                                <line x1="32" y1="10" x2="44" y2="10" stroke="#b8b5b0" stroke-width="1.5"/>
+                                <rect x="4" y="18" width="12" height="12" rx="1.5" fill="#dedad6"/>
+                                <rect x="18" y="18" width="12" height="12" rx="1.5" fill="#dedad6"/>
+                                <rect x="32" y="18" width="12" height="12" rx="1.5" fill="#dedad6"/>
+                                <line x1="4" y1="24" x2="16" y2="24" stroke="#b8b5b0" stroke-width="1.5"/>
+                                <line x1="18" y1="24" x2="30" y2="24" stroke="#b8b5b0" stroke-width="1.5"/>
+                                <line x1="32" y1="24" x2="44" y2="24" stroke="#b8b5b0" stroke-width="1.5"/>
+                                <rect x="7" y="6" width="6" height="2" rx="0.5" fill="rgba(0,0,0,0.15)"/>
+                                <rect x="21" y="6" width="6" height="2" rx="0.5" fill="rgba(0,0,0,0.15)"/>
+                                <rect x="35" y="6" width="6" height="2" rx="0.5" fill="rgba(0,0,0,0.15)"/>
+                            </svg>
+                            <span>Light</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Clock -->
+            <div class="modal-tab-panel" id="tab-clock">
+                <div class="modal-row modal-row-toggle">
+                    <span class="modal-label-text">Show weather</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="weather-toggle" />
+                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                    </label>
+                </div>
+                <div id="weather-settings" class="modal-row">
+                    <label class="modal-label">City
+                        <div class="city-input-wrap">
+                            <div class="city-autocomplete">
+                                <input type="text" id="city-input" placeholder="e.g. London" autocomplete="off" spellcheck="false" />
+                                <button class="city-clear-btn" id="city-clear-btn" type="button" title="Remove city">×</button>
+                                <ul class="city-dropdown" id="city-dropdown"></ul>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+                <div class="modal-row">
+                    <label class="modal-label">Time format
+                        <select id="time-format-picker">
+                            <option value="12">12-hour</option>
+                            <option value="24">24-hour</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="modal-row">
+                    <label class="modal-label">Temperature
+                        <select id="temp-unit-picker">
+                            <option value="C">Celsius (°C)</option>
+                            <option value="F">Fahrenheit (°F)</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Tab: Message -->
+            <div class="modal-tab-panel" id="tab-message">
+                <!-- Mode selector -->
+                <div class="msg-mode-row">
+                    <label class="msg-radio">
+                        <input type="radio" name="msg-mode" value="quotes" checked />
+                        <span>Quotes</span>
+                    </label>
+                    <label class="msg-radio">
+                        <input type="radio" name="msg-mode" value="custom" />
+                        <span>Custom message</span>
+                    </label>
+                </div>
+
+                <!-- Quotes interval (outside scroll container for alignment) -->
+                <div class="quotes-interval">
+                    <span class="quotes-interval-label">Change</span>
+                    <div class="quotes-interval-options">
+                        <button class="interval-btn active" data-interval="3600000">Every hour</button>
+                        <button class="interval-btn" data-interval="86400000">Every day</button>
+                    </div>
+                </div>
+
+                <!-- Quotes panel -->
+                <div id="msg-panel-quotes">
+                    <div class="quote-next-info" id="quote-countdown">
+                        <span class="quote-next-label">Next quote in</span>
+                        <span class="quote-next-time" id="quote-countdown-time">—</span>
+                    </div>
+                    <div class="quotes-list" id="quotes-list"></div>
+                </div>
+
+                <!-- Custom panel -->
+                <div id="msg-panel-custom" style="display:none">
+                    <div class="flap-grid-input" id="flap-grid-input"></div>
+                    <div class="sparkle-picker">
+                        <span class="sparkle-picker-label">Sparkles</span>
+                        <div class="sparkle-chips" id="sparkle-chips"></div>
+                    </div>
+                    <div class="flap-grid-actions">
+                        <button class="flap-grid-clear" id="flap-grid-clear">Clear</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="modal-save" id="modal-save">Done</button>
+            </div>
         </div>
-        <div class="settings-row">
-            <label class="settings-label">Time
-                <select id="time-format-picker">
-                    <option value="12">12-hour</option>
-                    <option value="24">24-hour</option>
-                </select>
-            </label>
-        </div>
-        <div class="settings-row">
-            <label class="settings-label">Theme
-                <select id="theme-picker">
-                    <option value="charcoal">Charcoal</option>
-                    <option value="graphite">Graphite</option>
-                    <option value="light">Light</option>
-                </select>
-            </label>
-        </div>
-        <div class="settings-hint">Press S to close</div>
     </div>
     <script src="script.js"></script>
 </body>

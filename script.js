@@ -652,6 +652,7 @@ let clockInterval = null;
 
 function clearBoard() {
 	[row1Units,row2Units,row3Units,row4Units,row5Units].forEach(r=>setRow(r,' '.repeat(COLS)));
+	document.getElementById('row-5').dataset.placeholder = 'false';
 }
 
 function renderClockImmediate() {
